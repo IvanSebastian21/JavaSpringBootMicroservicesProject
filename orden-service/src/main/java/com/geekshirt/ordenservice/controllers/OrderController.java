@@ -45,6 +45,13 @@ public class OrderController {
         return new ResponseEntity<>(converter.convertEntityToDto(order), HttpStatus.OK);
     }
 
+
+    @GetMapping("order/byAccount/{accountId}")
+    public ResponseEntity<List<OrderResponseDto>> findOrdersByAccountId(@PathVariable String accountId) {
+        List<Order> orders = orderService.findOrdersByAccountId(accountId);
+        return new ResponseEntity<>(converter.convertEntityToDto(orders), HttpStatus.OK);
+    }
+
     @PostMapping("order/create")
     public ResponseEntity<OrderResponseDto> createOrder(@RequestBody OrderRequestDto payload) {
         Order order = orderService.createOrder(payload);

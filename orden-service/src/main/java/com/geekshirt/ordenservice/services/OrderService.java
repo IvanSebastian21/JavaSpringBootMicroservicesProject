@@ -8,6 +8,7 @@ import com.geekshirt.ordenservice.entities.Order;
 import com.geekshirt.ordenservice.entities.OrderDetail;
 import com.geekshirt.ordenservice.exceptions.AccountNotFoundException;
 import com.geekshirt.ordenservice.exceptions.OrderNotFoundException;
+import com.geekshirt.ordenservice.repository.OrderRepository;
 import com.geekshirt.ordenservice.utils.Constants;
 import com.geekshirt.ordenservice.utils.ExceptionMessagesEnum;
 import com.geekshirt.ordenservice.utils.OrderStatusEnum;
@@ -21,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -33,6 +35,9 @@ public class OrderService {
     @Autowired
     private JpaOrderDAO jpaOrderDAO;
 
+    @Autowired
+    private OrderRepository orderRepository;
+
     @Transactional(isolation = Isolation.READ_COMMITTED, propagation = Propagation.REQUIRED)
     public Order createOrder(OrderRequestDto orderRequestDTO) {
         OrderValidator.validateOrder(orderRequestDTO);
@@ -40,7 +45,7 @@ public class OrderService {
                 .findAccountById(orderRequestDTO.getAccountId())
                 .orElseThrow(() -> new AccountNotFoundException(ExceptionMessagesEnum.ACCOUNT_NOT_FOUND.getValue()));
         Order order = initOrder(orderRequestDTO);
-        return jpaOrderDAO.save(order);
+        return orderRepository.save(order);
     }
 
     private Order initOrder(OrderRequestDto orderRequest) {
@@ -68,16 +73,23 @@ public class OrderService {
     }
 
     public List<Order> findAllOrders() {
-        return jpaOrderDAO.findAll();
+        return orderRepository.findAll();
     }
 
     public Order findOrderById(String orderId) {
-        return jpaOrderDAO.findByOrderId(orderId)
-                .orElseThrow(() -> new OrderNotFoundException(ExceptionMessagesEnum.ORDER_NOT_FOUND.getValue()));
+        Optional<Order> order = Optional.ofNullable(orderRepository.findOrderByOrderId(orderId));
+        return order.orElseThrow(() -> new OrderNotFoundException(ExceptionMessagesEnum.ORDER_NOT_FOUND.getValue()));
     }
 
     public Order findById(Long id) {
-        return jpaOrderDAO.findById(id)
+        return orderRepository.findById(id)
                 .orElseThrow(() -> new OrderNotFoundException(ExceptionMessagesEnum.ORDER_NOT_FOUND.getValue()));
+    }
+
+    // Devuelve una lista de ordenes según la cuenta
+    public List<Order> findOrdersByAccountId(String accountId){
+        Optional<List<Order>> orders = Optional.ofNullable(orderRepository.findOrdersByAccountId(accountId));
+        return orders
+                .orElseThrow(() -> new OrderNotFoundException(ExceptionMessagesEnum.ORDERS_WERE_NOT_FOUND.getValue()));
     }
 }
